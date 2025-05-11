@@ -1,0 +1,264 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <iostream>
+#include <cstring>
+#include <fstream>
+#include <set>
+#include <vector>
+#include <map>
+//#include <chrono>
+
+using namespace std;
+
+vector<set<int>> claz;
+
+void citire();
+void afisare();
+bool unitPropagation();
+void eliminateTautologies();
+void doPureLiteralElimination();
+bool pureLiteralElimination();
+int findSplitLiteral();
+bool DP_SAT();
+
+int main() {
+    citire();
+    afisare();
+    bool result = DP_SAT();
+    if (result) {
+        cout << "Pofta inimii";
+    }
+    else {
+        cout << "Mama la copii";
+    }
+
+    system("pause");
+}
+
+void citire() {
+    ifstream fin("input.txt");
+    char Bin[100];
+    char* p;
+    int n, m, x;
+
+    while (fin.getline(Bin, 100)) {
+        if (Bin[0] == 'p') {
+            p = strtok(Bin, " ");
+            p = strtok(NULL, " "); // skip 'cnf'
+            p = strtok(NULL, " "); n = atoi(p);
+            p = strtok(NULL, " "); m = atoi(p);
+            break;
+        }
+    }
+
+    while (fin.getline(Bin, 100)) {
+        set<int> clauza;
+        p = strtok(Bin, " ");
+        while (p != NULL) {
+            x = atoi(p);
+            if (x == 0) break;
+            clauza.insert(x);
+            p = strtok(NULL, " ");
+        }
+        if (!clauza.empty()) {
+            claz.push_back(clauza);
+        }
+    }
+}
+
+void afisare() {
+    for (size_t i = 0; i < claz.size(); i++) {
+        cout << "{ ";
+        for (int x : claz[i]) {
+            cout << x << " ";
+        }
+        cout << "} NR: " << i + 1 << "\n";
+    }
+}
+
+bool unitPropagation() {
+    bool modified = false;
+    while (true) {
+        int l = 0;
+        bool foundUnit = false;
+        for (const set<int>& clause : claz) {
+            if (clause.size() == 1) {
+                l = *clause.begin();
+                foundUnit = true;
+                break;
+            }
+        }
+        if (!foundUnit) break;
+        modified = true;
+
+        vector<set<int>> newClauses;
+        for (const set<int>& clause : claz) {
+            if (!clause.count(l)) {
+                newClauses.push_back(clause);
+            }
+        }
+
+        vector<set<int>> tempClauses;
+        for (const set<int>& clause : newClauses) {
+            if (clause.count(-l)) {
+                set<int> newClause = clause;
+                newClause.erase(-l);
+                tempClauses.push_back(newClause);
+            }
+            else {
+                tempClauses.push_back(clause);
+            }
+        }
+
+        claz = tempClauses;
+    }
+    return modified;
+}
+
+void eliminateTautologies() {
+    vector<set<int>> newClauses;
+    for (const set<int>& clause : claz) {
+        bool isTautology = false;
+        for (int x : clause) {
+            if (clause.count(-x)) {
+                isTautology = true;
+                break;
+            }
+        }
+        if (!isTautology) {
+            newClauses.push_back(clause);
+        }
+    }
+    claz = newClauses;
+}
+
+bool pureLiteralElimination() {
+    map<int, pair<bool, bool>> varOccurrences;
+
+    for (const set<int>& clause : claz) {
+        for (int x : clause) {
+            int var = abs(x);
+            if (x > 0) {
+                varOccurrences[var].first = true;
+            }
+            else {
+                varOccurrences[var].second = true;
+            }
+        }
+    }
+
+    vector<int> pureLits;
+    for (const pair<const int, pair<bool, bool>>& entry : varOccurrences) {
+        int var = entry.first;
+        bool hasPos = entry.second.first;
+        bool hasNeg = entry.second.second;
+        if (hasPos != hasNeg) {
+            if (hasPos) {
+                pureLits.push_back(var);
+            }
+            else {
+                pureLits.push_back(-var);
+            }
+        }
+    }
+
+    if (pureLits.empty()) {
+        return false;
+    }
+
+    vector<set<int>> newClauses;
+    for (const set<int>& clause : claz) {
+        bool containsPure = false;
+        for (int x : pureLits) {
+            if (clause.count(x)) {
+                containsPure = true;
+                break;
+            }
+        }
+        if (!containsPure) {
+            newClauses.push_back(clause);
+        }
+    }
+
+    claz = newClauses;
+    return true;
+}
+
+void doPureLiteralElimination() {
+    while (pureLiteralElimination());
+}
+
+int findSplitLiteral() {
+    set<int> allLits;
+    for (const set<int>& clause : claz) {
+        for (int x : clause) {
+            allLits.insert(x);
+        }
+    }
+
+    for (int x : allLits) {
+        if (allLits.count(-x)) {
+            return x;
+        }
+    }
+
+    return 0;
+}
+
+bool DP_SAT() {
+    while (true) {
+        unitPropagation();
+        eliminateTautologies();
+        doPureLiteralElimination();
+
+        if (claz.empty()) {
+            return true;
+        }
+
+        bool hasEmptyClause = false;
+        for (const set<int>& clause : claz) {
+            if (clause.empty()) {
+                hasEmptyClause = true;
+                break;
+            }
+        }
+        if (hasEmptyClause) {
+            return false;
+        }
+
+        int l = findSplitLiteral();
+        if (l == 0) {
+            return true;
+        }
+
+        vector<set<int>> resolvents;
+        for (const set<int>& c : claz) {
+            if (c.count(l)) {
+                for (const set<int>& n : claz) {
+                    if (n.count(-l)) {
+                        set<int> resolvent;
+                        for (int x : c) {
+                            if (x != l) resolvent.insert(x);
+                        }
+                        for (int x : n) {
+                            if (x != -l) resolvent.insert(x);
+                        }
+                        resolvents.push_back(resolvent);
+                    }
+                }
+            }
+        }
+
+        for (const set<int>& r : resolvents) {
+            claz.push_back(r);
+        }
+
+        vector<set<int>> newClauses;
+        for (const set<int>& clause : claz) {
+            if (!clause.count(l) && !clause.count(-l)) {
+                newClauses.push_back(clause);
+            }
+        }
+
+        claz = newClauses;
+    }
+}
