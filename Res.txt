@@ -1,0 +1,124 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <iostream>
+#include <cstring>
+#include <fstream>
+#include <set>
+#include <vector>
+//#include <chrono>
+
+
+using namespace std;
+
+vector<set<int>> claz;
+void citire();
+void afisare();
+bool Rez(set<int>& glass1, set<int>& glass2, set<int>& cucubau);
+bool NuSeMaiGata();
+
+int main() {
+
+	citire();
+	afisare();
+	if (NuSeMaiGata()) { cout << "Mama la copii"; } else cout << "Pofta inimii";
+    
+    
+    system("pause");
+
+}
+
+
+
+void citire() {
+
+	ifstream fin("input.txt");
+	char ReadP; int n, m, i, j=0;
+	char Trash; char Bin[100]; int x;
+	
+	char* p;
+	while (fin.getline(Bin, 100)) {
+		if (Bin[0] == 'p') {
+			p = strtok(Bin, " ");
+			p = strtok(NULL, " ");
+			p = strtok(NULL, " "); n = atoi(p);
+			p = strtok(NULL, " "); m = atoi(p);
+		}
+		while (fin.getline(Bin, 100)) {
+			set<int> clazz;
+			p = strtok(Bin, " "); while (p != NULL) { x = atoi(p); if (x == 0) break; clazz.insert(x); p = strtok(NULL, " "); }
+			claz.push_back(clazz);
+		}
+	}
+}
+void afisare() {
+	int i = 0;
+	for (i = 0; i < claz.size(); i++) {
+		cout << "{ ";
+		for (int x : claz[i]) {
+			cout << x << " ";
+		}
+		cout << "} NR: " << i + 1<<"\n";
+	}
+}
+
+bool Rez(set<int>& glass1, set<int>& glass2, set<int>& cucubau) {
+    cucubau.clear();
+
+    for (int i : glass1) {
+        for (int j : glass2) {
+            if (i == -j) {
+                set<int> a = glass1;
+                set<int> b = glass2;
+                a.erase(i);
+                b.erase(j);
+                cucubau.insert(a.begin(), a.end());
+                cucubau.insert(b.begin(), b.end());
+
+                // Daca ii imparatie
+                for (int x : cucubau) {
+                    if (cucubau.count(-x)) {
+                        return false; 
+                    }
+                }
+
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool NuSeMaiGata() {
+    bool ok; int i, j;
+    set<set<int>> ClazzALL(claz.begin(), claz.end());
+
+    do {
+        ok = false;
+        vector<set<int>> ClazzNEW;
+
+        for ( i = 0; i < claz.size(); i++) {
+            for ( j = i + 1; j < claz.size(); j++) {
+                set<int> ClazzFAKE;
+                if (Rez(claz[i], claz[j], ClazzFAKE)) {
+                    if (ClazzFAKE.empty()) {
+                        return true;
+                    }
+
+                    // Scapa de dupe
+                    if (ClazzALL.find(ClazzFAKE) == ClazzALL.end()) {
+                        ClazzNEW.push_back(ClazzFAKE);
+                        ClazzALL.insert(ClazzFAKE);
+                        ok = true;
+                    }
+                }
+            }
+            cout << "Pain";
+        }
+
+        claz.insert(claz.end(), ClazzNEW.begin(), ClazzNEW.end());
+        cout << "Still running\n";
+
+    } while (ok);
+
+    return false;
+}
