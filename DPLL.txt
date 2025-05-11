@@ -1,0 +1,248 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <iostream>
+#include <cstring>
+#include <fstream>
+#include <set>
+#include <vector>
+//#include <chrono>
+#include <unordered_set>
+
+using namespace std;
+
+vector<set<int>> claz;
+
+void citire();
+void afisare();
+bool DPLL();
+
+int main() {
+
+    citire();
+    afisare();
+
+    if (DPLL()) { cout << "Mama la copii"; }
+    else cout << "Pofta inimii";
+
+    system("pause");
+    return 0;
+}
+
+void citire() {
+    ifstream fin("input.txt");
+    char ReadP; int n, m, i, j = 0;
+    char Trash; char Bin[100]; int x;
+    char* p;
+    while (fin.getline(Bin, 100)) {
+        if (Bin[0] == 'p') {
+            p = strtok(Bin, " ");
+            p = strtok(NULL, " ");
+            p = strtok(NULL, " "); n = atoi(p);
+            p = strtok(NULL, " "); m = atoi(p);
+        }
+        while (fin.getline(Bin, 100)) {
+            set<int> clazz;
+            p = strtok(Bin, " ");
+            while (p != NULL) {
+                x = atoi(p);
+                if (x == 0) break;
+                clazz.insert(x);
+                p = strtok(NULL, " ");
+            }
+            claz.push_back(clazz);
+        }
+    }
+}
+
+void afisare() {
+    int i = 0;
+    for (i = 0; i < claz.size(); i++) {
+        cout << "{ ";
+        for (int x : claz[i]) {
+            cout << x << " ";
+        }
+        cout << "} NR: " << i + 1 << "\n";
+    }
+}
+
+bool DrinkingPuffyLatteLazily(vector<set<int>> glass) {
+    int i, j;
+    bool ok;
+    int mitoza;
+    bool res1, res2, Pur, Remov, Chang, satisface;
+
+    // Gol
+    for (i = 0; i < glass.size(); i++) {
+        if (glass[i].empty()) {
+            return true;
+        }
+    }
+
+    if (glass.empty()) {
+        return false;
+    }
+
+    do {
+        ok = false;
+
+        // Elim literarii puri
+        unordered_set<int> liberali;
+        for (i = 0; i < glass.size(); i++) {
+            set<int>& clause = glass[i];
+            for (int x : clause) {
+                liberali.insert(x);
+            }
+        }
+
+        unordered_set<int> purLiberali;
+        for (int x : liberali) {
+            if (liberali.find(-x) == liberali.end()) {
+                purLiberali.insert(x);
+            }
+        }
+
+        vector<set<int>> nouPurr;
+        for (i = 0; i < glass.size(); i++) {
+            set<int>& clause = glass[i];
+            Pur = false;
+            for (int x : clause) {
+                if (purLiberali.count(x)) {
+                    Pur = true;
+                    break;
+                }
+            }
+            if (!Pur) {
+                nouPurr.push_back(clause);
+            }
+        }
+
+        if (nouPurr.size() != glass.size()) {
+            glass = nouPurr;
+            ok = true;
+        }
+
+        for (i = 0; i < glass.size(); i++) {
+            if (glass[i].empty()) {
+                return true;
+            }
+        }
+
+        if (glass.empty()) {
+            return false;
+        }
+
+        // Propagare
+        Chang = false;
+        vector<set<int>> newGlassessss;
+
+        while (true) {
+            vector<int> unitLiberali;
+            for (i = 0; i < glass.size(); i++) {
+                if (glass[i].size() == 1) {
+                    unitLiberali.push_back(*glass[i].begin());
+                }
+            }
+
+            if (unitLiberali.empty()) {
+                break;
+            }
+
+            unordered_set<int> units(unitLiberali.begin(), unitLiberali.end());
+
+            for (int x : unitLiberali) {
+                if (units.count(-x)) {
+                    return true;
+                }
+            }
+
+            unordered_set<int> negations;
+            for (int x : unitLiberali) {
+                negations.insert(-x);
+            }
+
+            newGlassessss.clear();
+            Remov = false;
+
+            for (i = 0; i < glass.size(); i++) {
+                set<int>& clause = glass[i];
+                satisface = false;
+                for (int x : clause) {
+                    if (units.count(x)) {
+                        satisface = true;
+                        break;
+                    }
+                }
+
+                if (satisface) {
+                    Remov = true;
+                    continue;
+                }
+
+                set<int> newGlass;
+                for (int x : clause) {
+                    if (negations.count(x) == 0) {
+                        newGlass.insert(x);
+                    }
+                }
+
+                if (newGlass.empty()) {
+                    return true;
+                }
+
+                newGlassessss.push_back(newGlass);
+            }
+
+            if (Remov || newGlassessss.size() != glass.size()) {
+                glass = newGlassessss;
+                Chang = true;
+            }
+            else {
+                break;
+            }
+        }
+
+        if (Chang) {
+            ok = true;
+        }
+
+    } while (ok);
+
+    for (i = 0; i < glass.size(); i++) {
+        if (glass[i].empty()) {
+            return true;
+        }
+    }
+
+    if (glass.empty()) {
+        return false;
+    }
+
+    // Despartire
+    mitoza = 0;
+    for (i = 0; i < glass.size(); i++) {
+        if (!glass[i].empty()) {
+            mitoza = abs(*glass[i].begin());
+            break;
+        }
+    }
+
+    if (mitoza == 0) {
+        return false;
+    }
+
+    vector<set<int>> glass1 = glass;
+    glass1.push_back({ mitoza });
+    res1 = DrinkingPuffyLatteLazily(glass1);
+    if (!res1) {
+        return false;
+    }
+
+    vector<set<int>> glass2 = glass;
+    glass2.push_back({ -mitoza });
+    res2 = DrinkingPuffyLatteLazily(glass2);
+    return res2;
+}
+
+bool DPLL() {
+    return DrinkingPuffyLatteLazily(claz);
+}
+
