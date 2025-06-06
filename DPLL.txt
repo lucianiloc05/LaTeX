@@ -20,8 +20,8 @@ int main() {
     citire();
     afisare();
 
-    if (DPLL()) { cout << "Mama la copii"; }
-    else cout << "Pofta inimii";
+    if (DPLL()) { cout << "Unsat"; }
+    else cout << "Sat";
 
     system("pause");
     return 0;
