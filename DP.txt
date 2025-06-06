@@ -25,10 +25,10 @@ int main() {
     afisare();
     bool result = DP_SAT();
     if (result) {
-        cout << "Pofta inimii";
+        cout << "Sat";
     }
     else {
-        cout << "Mama la copii";
+        cout << "Unsat";
     }
 
     system("pause");
