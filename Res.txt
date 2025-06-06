@@ -19,7 +19,7 @@ int main() {
 
 	citire();
 	afisare();
-	if (NuSeMaiGata()) { cout << "Mama la copii"; } else cout << "Pofta inimii";
+	if (NuSeMaiGata()) { cout << "Unsat"; } else cout << "Sat";
     
     
     system("pause");
